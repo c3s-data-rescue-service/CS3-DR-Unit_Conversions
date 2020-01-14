@@ -23,3 +23,6 @@ subroutine.
      * Pressure are in inches Hg
 
   We have assumed that the ships logs have already adjusted their local time when crossing the international dateline.
+
+
+  python to_imma.py > imma.jamestown
