@@ -62,7 +62,6 @@ add_char = ""
 #read in the entire positions file, interpolating to every hour
 while True:
   line = posFilename.readline()
-  print (line)
   if not line:
     break
   #print line.split("\t")
