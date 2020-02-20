@@ -1,6 +1,7 @@
 """
-version 0.2 
-  - 4/9/2019 corrected time_date2julianday 
+version 0.3 
+  - 2/9/2020 corrected time_date2julianday  &  time_local_hour_julianday2UTC
+
 =============================================================================
  Comprehensive Ocean-Atmosphere Data Set (COADS):                  Python Code 
  Python translation of Scott Woodruff and Sandy Lubker' lmrlib Fortran library
@@ -22,8 +23,7 @@ version 0.2
            {baro_Eng_in2mb}     inches (English) Hg to millibars
            {baro_mb2Eng_in}     millibars to inches (English) Hg
            {baro_Fr_in2mb}     inches (French) Hg to millibars
-           {baro_mb2Fr_in}     millibars to inches (French) Hg, plus
-                        entry points {fxfim0,fxfim1} used by {tpbpfi}
+           {baro_mb2Fr_in}     millibars to inches (French) Hg
            {baro_tempF_correction}     correction value for temperature (Fahrenheit)
            {baro_tempC_correction}     correction value for temperature (Celsius)
            {baro_temp_correction}     correction value for temperature (generalized)
@@ -93,7 +93,7 @@ def baro_mm2mb(mm):
 #     in cross-testing against that routine than the factor 0.750062.
 def baro_mb2mm(mb):
     baro_mb2mm = mb / 1.333224
-    return fxbmm
+    return baro_mb2mm
 
 #=============================================================================
 #-----Convert barometric pressure in (standard) inches (English) of
@@ -129,9 +129,7 @@ def baro_mb2Eng_in(mb):
 #     millibars (hPa).  Paris, instead of French, inches are referred
 #     to in Lamb (1986), but these appear to be equivalent units.  Note:
 #     data in lines (twelve lines per inch) or in inches and lines need
-#     to be converted to inches (plus any decimal fraction).  Entry points
-#     {fxfim0,fxfim1}, which are called by {tpbpfi} (see for background)
-#     are not recommended for use in place of {baro_Fr_in2mb}.
+#     to be converted to inches (plus any decimal fraction). 
 #     References:
 #     IMC (International Meteorological Committee), 1890: International
 #           Meteorological Tables, published in Conformity with a Resolution
@@ -154,7 +152,6 @@ def baro_mb2Fr_in(mb):
 #=============================================================================
 #-----Correction value of barometric pressure (in mm or mb; standard
 #     temperature of scale 0C) (bp) for temperature in Celsius (tc)
-#     (see {fwbpgt} for additional background).
 #     Reference:
 #     List, R.J., 1966: Smithsonian Meteorological Tables.
 #           Smithsonian Institution, Washington, DC, 527 pp.
@@ -167,7 +164,6 @@ def baro_tempC_correction(bp,tc):
 #=============================================================================
 #-----Correction value of barometric pressure (in inches; standard
 #     temperature of scale 62F) (bp) for temperature in Fahrenheit (tf)
-#     (see {fwbpgt} for additional background).
 #     Reference:
 #     List, R.J., 1966: Smithsonian Meteorological Tables.
 #           Smithsonian Institution, Washington, DC, 527 pp.
@@ -183,10 +179,10 @@ def baro_tempF_correction(bp,tf):
 #                                          standard temperature:
 #          u  bp          t           of scale (ts)  of mercury (th)
 #          -  ----------  ----------  -------------  -------------------
-#          1  mm or mb    Celsius      0C             0C
-#          2  Eng. in.    Fahrenheit  62F (16.667C)  32F (0C) (pre-1955)    
-#          3  Eng. in.    Fahrenheit  32F (0C)       32F (0C) (1955-)
-#          4  French in.  Reaumur     13R (16.25C)    0R (0C)
+#          0  mm or mb    Celsius      0C             0C
+#          1  Eng. in.    Fahrenheit  62F (16.667C)  32F (0C) (pre-1955)    
+#          2  Eng. in.    Fahrenheit  32F (0C)       32F (0C) (1955-)
+#          3  French in.  Reaumur     13R (16.25C)    0R (0C)
 #     The returned {baro_temp_correction} value is in the same units as, and is to be
 #     added to, bp.  Establishment of 0C/32F as the standard temperature
 #     for both scale and mercury as implemented under u=1 and 3 became
@@ -227,7 +223,7 @@ def baro_temp_correction(bp,t,u):
     mList=[0.0001818, 0.000101, 0.000101, 0.000227]
     lList=[0.0000184,0.0000102,0.0000102,0.0000230]
 #-----test u for valid range
-    if u < 1 or u > 4:
+    if u < 0 or u > 3:
        sys.exit("baro_temp_correction error: invalid u")
 
     baro_temp_correction = -bp * ( ((mList[u]*(t-thList[u]))-(lList[u]*(t-tsList[u]))) /
@@ -253,8 +249,7 @@ def baro_temp_correction(bp,t,u):
 #     45 deg, at sea level" (WBAN, 12 App.1.4.1--2; see also List, 1966, pp.
 #     3-4, and WMO, 1966).  For example, UK Met. Office MK I (MK II) barometers
 #     issued before (starting) 1 January 1955 were graduated to read correctly
-#     when the value of gravity was g45 (g0) (UKMO, 1969).  As shown by test
-#     routines {tpbpg1,tpbpg2}, gmode=2 and 3 yield virtually the same results.
+#     when the value of gravity was g45 (g0) (UKMO, 1969).  
 #     References:
 #     List, R.J., 1966: Smithsonian Meteorological Tables.
 #           Smithsonian Institution, Washington, DC, 527 pp.
@@ -406,7 +401,7 @@ def temp_k2c(tk):
 def temp_c2k(tc):
     temp_c2k = tc + 273.15
     if temp_c2k < 0.0:
-       sys.exit("temp_c2k error: negative output=",fxtctk)
+       sys.exit("temp_c2k error: negative output=",temp_c2k)
     return temp_c2k
 #=============================================================================
 #-----Convert temperature in degrees Reaumur (tc) to degrees Celsius.
@@ -443,7 +438,7 @@ def wind_uv2dir(u,v):
     wind_uv2dir = 270.0 - a
 
     if wind_uv2dir > 360.0:
-       wind_uv2dir = fxuvdd - 360.0
+       wind_uv2dir -= 360.0
     return wind_uv2dir
 #=============================================================================
 def wind_uv2vel(u,v):
@@ -471,28 +466,28 @@ def wind_mps2kts(ms):
 
 #=============================================================================
 #-----Convert from knots (k0; with respect to the U.S. nautical mile) to
-#     meters per second (see {tpktms} for details).
+#     meters per second (see {wind_kts2mps} for details).
 def wind_us_kts2mps(k0):
     wind_us_kts2mps = k0 * 0.51479111111111111111
     return wind_us_kts2mps
 
 #=============================================================================
 #-----Convert from meters per second (ms) to knots (with respect to the
-#     U.S. nautical mile) (see {tpktms} for details).
+#     U.S. nautical mile) (see {wind_kts2mps} for details).
 def wind_mps2us_kts(ms):
     wind_mps2us_kts = ms *  1.9425354836481679732
     return wind_mps2us_kts
 
 #=============================================================================
 #-----Convert from knots (k1; with respect to the Admiralty nautical mile)
-#     to meters per second (see {tpktms} for details).
+#     to meters per second (see {wind_kts2mps} for details).
 def wind_a_kts2mps(k1):
     wind_a_kts2mps = k1 * 0.51477333333333333333
     return wind_a_kts2mps
 
 #=============================================================================
 #-----Convert from meters per second (ms) to knots (with respect to the
-#     Admiralty nautical mile) (see {tpktms} for details).
+#     Admiralty nautical mile) (see {wind_kts2mps} for details).
 def wind_mps2a_kts(ms):
     wind_mps2a_kts = ms *  1.9426025694156651471
     return wind_mps2a_kts
@@ -572,12 +567,6 @@ def wind_dircode2deg(dc,imiss):
 #=======================================================================-------
 #-----time conversions---------------------------------------------------------
 #=======================================================================-------
-#ckm def square(x,y):
-#ckm     return x*x, y*y
-#ckm
-#ckm xsq, ysq = square(2,3)
-#ckm print(xsq)  # Prints 4
-#ckm print(ysq)  # Prints 9  
 
 #-----Convert local standard hour (ihr; in hundredths 0-2399) and "Julian"
 #     day (i.e., any incrementable integer date) (idy) into coordinated
@@ -596,8 +585,10 @@ def time_local_hour_julianday2UTC(ihr,idy,elon):#,uhr,udy):
 
     wlon = 36000 - elon
     udy = idy
-    dhr = (wlon + 749)/1500
+
+    dhr = int((wlon + 749)/1500)
     uhr = ihr + dhr*100
+
     if uhr >= 2400:
        udy = udy + 1
        uhr = uhr - 2400
@@ -613,8 +604,9 @@ def time_date2julianday(iday,imonth,iyear):
     daysList = [31,28,31,30,31,30,31,31,30,31,30,31]
 
     if (iyear < 1770 or imonth < 1 or imonth > 12
-       or iday < 1 or  iday > daysList[imonth-1]
-       and (imonth != 2 or not calendar.isleap(iyear) or iday != 29)):
+       or iday < 1   
+       or (iday > daysList[imonth-1]
+       and (imonth != 2 or not(calendar.isleap(iyear)) or iday != 29))):
 
        sys.exit("time_date2julianday: invalid day,month,year")
 
