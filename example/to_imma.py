@@ -5,15 +5,15 @@
  edit by hand the output IMMA to fix the lat/lon and possibly the date between the areas flaged with the word
  fix
 
- This is an example program to process digitised logbook data from Jamestown (1886) into IMMA records.
+ This is an example program to process digitised logbook data from Jamestown (1844) into IMMA records.
 
- Specifically for the Jamestown_1886 transcribed logbook:
+ Specifically for the Jamestown_1844 transcribed logbook:
  There are two input files used, one for the position of the ship and the other for the observations
 
  The format of the positions file is 7 columns of tab separated fields 
 
  DD/MM/YYYY         Log lat        Log Long            Estimated Lat   Estimated Lon                Corrected Lat                Corrected Long
- 12/03/1886         15 22 N         61 42 W              NA              NA                             NA                              NA
+ 15/01/1845            NA             NA                  36.8            -76.3                          NA                           NA
 
      * columns 2 and 3 the lat/lon are in degrees and minutes with additional character indicating North/South East/West
      * otherwise in degrees North and degrees East
@@ -23,7 +23,7 @@
  The format of the observations file is 6 columns of tab separated fields
 
  DD/MM/YYYY      HR   air_temp  sfc_temp baro_temp Pressure Hg
- 13/03/1886       3      78      78        81       30.03
+ 15/01/1845      24      NA        NA       NA        30.14
 
      * All temperatures are in degrees Fahrenheit
      * Pressure are in inches Hg
@@ -33,24 +33,24 @@
 
 # lmrlib (long marine report library) contains well documented and thoroughly validated subroutines and functions for historical units conversions
 import lmrlib
-
+import numpy as np
 # SciPy library for interpolation
 import scipy.interpolate
 
 import datetime 
 # the identifing ship name that will be written into the IMMA record
-Name='Albatross_1890';
+Name='Jamestown';
 Name= Name[0:9]
 
 #Get the observations
-obsFilename = open("obs.qc.out.revised",'r')
+obsFilename = open("obs.qc.out.revised")
 #DD/MM/YYYY       H   air_temp  sfc_temp baro_temp Pressure Hg
-#13/03/1886       3      78      78      81      30.03
+#15/01/1845      24      NA        NA       NA        30.14
 
 # Get the positions
-posFilename = open("positions.qc.out.revised",'r')
+posFilename = open("positions.qc.out.revised")
 #DD/MM/YYYY         Log lat        Log Long            Estimated Lat   Estimated Lon                Corrected Lat                Corrected Long
-#12/03/1886         15 22 N         61 42 W              NA              NA                             NA                              NA
+#15/01/1845            NA              NA                 36.8            -76.3                          NA                           NA
 
 #https://stackoverflow.com/questions/29278265/python-comparing-columns-in-2-files-and-returning-merged-output
 d = {}
@@ -64,7 +64,7 @@ while True:
   line = posFilename.readline()
   if not line:
     break
-  #print line.split("\t")
+  #print(line.split("\t"))
   #pc0 date 12pm local time
   #pc1 ship lat
   #pc2 ship lon
@@ -123,7 +123,7 @@ while True:
 
           if (hour <= 24):
 
-            d[(ptime0+'/'+str(hour)+add_char)] = (ptime0)+'/'+str(hour),round(float(plat_interp(hour)),2),round(float(plon_interp(hour)),2)
+            d[(ptime0+'/'+str(hour)+add_char)] = (ptime0)+'/'+str(hour),np.round_(plat_interp(hour),2),np.round_(plon_interp(hour),2)
 #            print ptime0+'/'+str(hour)+add_char,round(plat_interp(hour),2),round(plon_interp(hour),2)
 
           else:
@@ -136,7 +136,7 @@ while True:
             iday,imonth,iyear = lmrlib.time_julianday2date(jday)
               #print "increase day ",date_1.day,iday
 
-            d[(str(iday)+'/'+str(imonth)+'/'+str(iyear)+'/'+str(hour - 24)+add_char)] = str(iday)+'/'+str(imonth)+'/'+str(iyear)+'/'+str(hour - 24),round(float(plat_interp(hour)),2),round(float(plon_interp(hour)),2)
+            d[(str(iday)+'/'+str(imonth)+'/'+str(iyear)+'/'+str(hour - 24)+add_char)] = str(iday)+'/'+str(imonth)+'/'+str(iyear)+'/'+str(hour - 24),np.round_(plat_interp(hour),2),np.round_(plon_interp(hour),2)
 #            print str(iday)+'/'+str(imonth)+'/'+str(iyear)+'/'+str(hour - 24)+add_char,round(plat_interp(hour),2),round(plon_interp(hour),2) 
 
           hour += 1 
@@ -188,6 +188,8 @@ while True:
      hour = int(obc1.strip())
   else:
      slp = 9999.9
+     day,month,year = obc0.strip().split("/")
+     hour = int(obc1.strip())
 
  #do the times match? 
 #     print obc0.strip()+'/'+str(hour)+add_char
@@ -197,13 +199,13 @@ while True:
     #if there is an air temperature convert to celcius
     air_temp = 999.9 
     if obc2.strip() != 'NA':
-       air_temp = int(obc2.strip())
+       air_temp = float(obc2.strip())
        air_temp = lmrlib.temp_f2c(air_temp)
 
     #if there is an sea surface temperature convert to celcius
     SS_temp = 999.9 
     if obc3.strip() != 'NA':
-       SS_temp = int(obc3.strip())
+       SS_temp = float(obc3.strip())
        SS_temp = lmrlib.temp_f2c(SS_temp)
 
     if (slp != 9999.9):
@@ -213,7 +215,7 @@ while True:
 
        # If Barometer Temperature Doing Temperature correction 
        if obc4.strip() != 'NA':
-          bar_temp = int(obc4.strip())
+          bar_temp = float(obc4.strip())
           # correction value for barometer temperature input in Fahrenheit
           slp += lmrlib.baro_tempF_correction(slp,bar_temp)
 
@@ -233,10 +235,10 @@ while True:
        #print elon
     #plon0_for_obs
     if (plon0_for_obs < 180. and elon > 180.):
-       print ("fix day and lat/lon above upto hour 12")
+       print("fix day and lat/lon above upto hour 12")
 
     if (plon0_for_obs > 180. and elon < 180.):
-       print ("fix day below")
+       print("fix day below")
 
     # easy way to "fudge" having an hour 24 rather then add a day and hour 00
     # hour local standard
