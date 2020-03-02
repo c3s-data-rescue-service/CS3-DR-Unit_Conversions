@@ -1,7 +1,6 @@
 """
-version 0.3 
-  - 2/9/2020 corrected time_date2julianday  &  time_local_hour_julianday2UTC
-
+version 0.2 
+  - 4/9/2019 corrected time_date2julianday 
 =============================================================================
  Comprehensive Ocean-Atmosphere Data Set (COADS):                  Python Code 
  Python translation of Scott Woodruff and Sandy Lubker' lmrlib Fortran library
@@ -543,7 +542,7 @@ def wind_4chardir2deg(c32,dc,imiss):
                'WXN ','WNW ','NWXW','NW  ','NWXN','NNW ','NXW ','N   ']
     wind_4chardir2deg = imiss
     for j in range(1,32):
-       if c32 == cwdList[j]:
+       if c32 == cwdList[j-1]:
           wind_4chardir2deg = wind_dircode2deg(j,imiss)
           dc     = j
           return wind_4chardir2deg
@@ -559,7 +558,7 @@ def wind_dircode2deg(dc,imiss):
                191,   203,   214,   225,   236,   248,   259,   270,
                281,   293,   304,   315,   326,   338,   349,   360]
     if dc >= 1 and dc<= 32:
-       wind_dircode2deg = dwdList[dc]
+       wind_dircode2deg = dwdList[dc-1]
     else:
        wind_dircode2deg = imiss
     return wind_dircode2deg
