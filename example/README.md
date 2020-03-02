@@ -27,9 +27,9 @@ subroutine.
   This example uses the following routines from the lmrlib:
   
   Time conversions:
-   time_local_hour_julianday2UTC   -local standard hour and "Julian" day into UTC
-   time_date2julianday - date to days ("Julian") since 1 Jan 1770
-   time_julianday2date - days ("Julian") since 1 Jan 1770 to date
+     time_local_hour_julianday2UTC   -local standard hour and "Julian" day into UTC
+     time_date2julianday - date to days ("Julian") since 1 Jan 1770
+     time_julianday2date - days ("Julian") since 1 Jan 1770 to date
 
   Barometric conversions:
      baro_Eng_in2mb- inches (English) Hg to millibars
